@@ -51,7 +51,8 @@ class Bucket {
         'prefix' => 'LeakyBucket'
     );
 
-    public function __construct($options = array(), StorageInterface $storage = new FileStorage) {
+    public function __construct($options = array(), StorageInterface $storage = null) {
+        if (!$storage) $storage = new FileStorage();
         $options = array_intersect_key($options, self::$defaults);
         $options = array_merge(self::$defaults, $options);
         foreach ($options as $key => $value) {

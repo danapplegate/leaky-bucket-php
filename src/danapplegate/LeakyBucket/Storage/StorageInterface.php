@@ -30,7 +30,7 @@ namespace danapplegate\LeakyBucket\Storage;
  * @since 		Mar 27, 2012
  * @license     MIT license
  */ 
-class StorageInterface {
+interface StorageInterface {
 
     public function getMark($name);
 
