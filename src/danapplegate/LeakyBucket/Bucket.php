@@ -47,7 +47,8 @@ class Bucket {
         'max' => 10,
         'rate' => 0.167,
         'fill' => 0,
-        'name' => 'default'
+        'name' => 'default',
+        'prefix' => 'LeakyBucket'
     );
 
     public function __construct($options = array(), StorageInterface $storage = new FileStorage) {
@@ -58,7 +59,7 @@ class Bucket {
         }
         $this->storage = $storage;
         $this->start = null;
-        $this->name = 'LeakyBucket_' . $this->name;
+        $this->name = $options['prefix'] . '_' . $this->name;
     }
 
     public function setMax($max) {
