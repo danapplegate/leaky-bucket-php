@@ -51,6 +51,12 @@ class Bucket {
         'prefix' => 'LeakyBucket'
     );
 
+    /**
+     * Construct a new leaky bucket object.
+     *
+     * @param $options array Configuration settings.
+     * @param $storage SotrageInterface Persister for this leaky bucket
+     */
     public function __construct($options = array(), StorageInterface $storage = null) {
         if (!$storage) $storage = new FileStorage();
         $options = array_intersect_key($options, self::$defaults);
