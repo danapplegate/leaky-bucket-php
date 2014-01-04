@@ -25,16 +25,15 @@ use danapplegate\LeakyBucket\Storage\StorageInterface;
 use danapplegate\LeakyBucket\Storage\FileStorage;
 
 /**
- * Bucket.php - Provides basic mechanism for defining and manipulating a new 
+ * TokenBucket.php - Provides basic mechanism for defining and manipulating a new 
  * leaky bucket.
  *
- * @package     PHP Leaky Bucket
  * @author 		Dan Applegate <applegatedt@gmail.com>
  * @copyright   Copyright 2012 Dan Applegate
  * @since 		Mar 27, 2012
  * @license     MIT license
  */ 
-class Bucket {
+class TokenBucket {
 
     protected $fill;
     protected $name;
