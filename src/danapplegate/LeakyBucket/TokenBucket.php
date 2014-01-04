@@ -95,7 +95,7 @@ class TokenBucket {
         if ($fill < 0) {
             throw new \InvalidArgumentException;
         }
-        $this->fill = $fill;
+        $this->fill = ($fill <= $this->max) ? $fill : $this->max;
     }
 
     public function getFill() {
@@ -104,6 +104,10 @@ class TokenBucket {
 
     public function start() {
         $this->start = microtime(true);
+    }
+
+    public function getStart() {
+        return $this->start;
     }
 
     public function pour($weight = 1) {
