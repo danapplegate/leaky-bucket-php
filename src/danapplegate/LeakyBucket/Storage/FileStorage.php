@@ -80,9 +80,6 @@ class FileStorage implements StorageInterface {
 
     protected function _constructFilename($name) {
         $filename = $this->path . DIRECTORY_SEPARATOR . $name;
-        if (!file_exists($filename) || !is_writable($filename)) {
-            throw new \Exception;
-        }
         return $filename;
     }
 }
