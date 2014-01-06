@@ -64,7 +64,6 @@ class TokenBucket {
             $this->{$key} = $value;
         }
         $this->storage = $storage;
-        $this->lastTimestamp = null;
         $this->name = $options['prefix'] . '_' . $this->name;
     }
 
