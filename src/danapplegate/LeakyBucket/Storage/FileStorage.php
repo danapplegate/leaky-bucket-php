@@ -35,17 +35,18 @@ class FileStorage implements StorageInterface {
     protected $path;
 
     protected static $defaults = array(
-        'path' => 'buckets'
+        'path' => null
     );
 
     public function __construct($options = array()) {
         $options = array_intersect_key($options, self::$defaults);
         $options = array_merge(self::$defaults, $options);
+        if (!$options['path'])
+            $options['path'] = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'buckets';
         foreach ($options as $key => $value) {
             $this->{$key} = $value;
         }
-        $this->path = realpath($this->path);
-        if (!file_exists($this->path) && !mkdir($options['path'], 0777, true)) {
+        if (!file_exists($this->path) && !mkdir($this->path, 0777, true)) {
             throw new \InvalidArgumentException;
         }
         if (!is_writable($this->path)) {
