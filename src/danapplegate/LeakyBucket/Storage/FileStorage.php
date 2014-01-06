@@ -21,6 +21,8 @@
  */
 namespace danapplegate\LeakyBucket\Storage;
 
+use danapplegate\LeakyBucket\TokenBucket;
+
 /**
  * FileStorage.php - Basic persistent storage to the filesystem.
  *
@@ -35,17 +37,18 @@ class FileStorage implements StorageInterface {
     protected $path;
 
     protected static $defaults = array(
-        'path' => 'buckets'
+        'path' => null
     );
 
     public function __construct($options = array()) {
         $options = array_intersect_key($options, self::$defaults);
         $options = array_merge(self::$defaults, $options);
+        if (!$options['path'])
+            $options['path'] = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'buckets';
         foreach ($options as $key => $value) {
             $this->{$key} = $value;
         }
-        $this->path = realpath($this->path);
-        if (!file_exists($this->path) && !mkdir($options['path'], 0777, true)) {
+        if (!file_exists($this->path) && !mkdir($this->path, 0777, true)) {
             throw new \InvalidArgumentException;
         }
         if (!is_writable($this->path)) {
@@ -53,35 +56,36 @@ class FileStorage implements StorageInterface {
         }
     }
 
-    public function getMark($name) {
-        $filename = $this->_constructFilename($name);
-        $mark_parts = file_get_contents($filename);
+    public function readBucket(TokenBucket $bucket) {
+        $filename = $this->_constructFilename($bucket->getName());
+        if (!file_exists($filename)) {
+            return false;
+        }
+        $mark_parts = explode(':', file_get_contents($filename));
         if (count($mark_parts) != 2) {
-            throw new \Exception;
+            // Unrecognized format
+            return false;
         }
         list($time, $fill) = $mark_parts;
-        $last_mark->time = $time;
-        $last_mark->fill = $fill;
+        $bucket->setLastTimestamp($time);
+        $bucket->setFill($fill);
 
-        return $last_mark;
+        return true;
     }
 
-    public function setMark($name, $fill) {
-        $filename = $this->_constructFilename($name);
+    public function writeBucket(TokenBucket $bucket) {
+        $filename = $this->_constructFilename($bucket->getName());
         $mark_parts = array(
-            'time' => microtime(true),
-            'fill' => $fill
+            'time' => $bucket->getLastTimestamp(),
+            'fill' => $bucket->getFill()
         );
-        file_put_contents($filename, implode(PHP_EOL, $mark_parts));
+        file_put_contents($filename, implode(':', $mark_parts));
 
         return true;
     }
 
     protected function _constructFilename($name) {
         $filename = $this->path . DIRECTORY_SEPARATOR . $name;
-        if (!file_exists($filename) || !is_writable($filename)) {
-            throw new \Exception;
-        }
         return $filename;
     }
 }

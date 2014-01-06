@@ -25,22 +25,21 @@ use danapplegate\LeakyBucket\Storage\StorageInterface;
 use danapplegate\LeakyBucket\Storage\FileStorage;
 
 /**
- * Bucket.php - Provides basic mechanism for defining and manipulating a new 
+ * TokenBucket.php - Provides basic mechanism for defining and manipulating a new 
  * leaky bucket.
  *
- * @package     PHP Leaky Bucket
  * @author 		Dan Applegate <applegatedt@gmail.com>
  * @copyright   Copyright 2012 Dan Applegate
  * @since 		Mar 27, 2012
  * @license     MIT license
  */ 
-class Bucket {
+class TokenBucket {
 
     protected $fill;
     protected $name;
     protected $max;
     protected $rate;
-    protected $start;
+    protected $lastTimestamp;
     protected $storage;
 
     protected static $defaults = array(
@@ -65,12 +64,15 @@ class Bucket {
             $this->{$key} = $value;
         }
         $this->storage = $storage;
-        $this->start = null;
         $this->name = $options['prefix'] . '_' . $this->name;
     }
 
+    public function getName() {
+        return $this->name;
+    }
+
     public function setMax($max) {
-        if (isset($this->start)) {
+        if (isset($this->lastTimestamp)) {
             throw new \Exception;
         }
         $this->max = $max;
@@ -96,22 +98,51 @@ class Bucket {
         if ($fill < 0) {
             throw new \InvalidArgumentException;
         }
-        $this->fill = $fill;
+        $this->fill = ($fill <= $this->max) ? $fill : $this->max;
     }
 
     public function getFill() {
         return $this->fill;
     }
 
+    public function getLastTimestamp() {
+        return $this->lastTimestamp;
+    }
+
+    public function setLastTimestamp($timestamp) {
+        $timestamp = floatval($timestamp);
+        if ((!is_float($timestamp)) || $timestamp <= 0)
+            throw new \InvalidArgumentException;
+        $this->lastTimestamp = $timestamp;
+    }
+
+    /**
+     * Start should be called on any created bucket before it is used. If the 
+     * bucket does not exist in the persistent storage engine at the time this 
+     * is called, start will write the bucket using the storage engine and set 
+     * the time of the last mark as the lastTimestamp of this bucket.
+     *
+     * If the bucket already exists in the storage medium, the values of the 
+     * bucket will be updated to reflect those in the storage medium.
+     *
+     */
     public function start() {
-        $this->start = microtime(true);
+        $this->_updateFill();
+        if (!$this->lastTimestamp) {
+            // This is the first time the bucket has been started, persist to 
+            // storage
+            $this->lastTimestamp = microtime(true);
+            $this->storage->writeBucket($this);
+        }
     }
 
     public function pour($weight = 1) {
         $this->_updateFill();
-        if ($weight <= $this->fill) {
-            $this->fill -= $weight;
-            $this->storage->setMark($this->name, $this->fill);
+        if ($weight <= $this->getFill()) {
+            $newFill = $this->getFill() - $weight;
+            $this->setFill($newFill);
+            $this->setLastTimestamp(microtime(true));
+            $this->storage->writeBucket($this);
             return true;
         } else {
             return false;
@@ -119,11 +150,11 @@ class Bucket {
     }
 
     protected function _updateFill() {
-        $last_mark = $this->storage->getMark($this->name);
-        if ($last_mark) {
-            $elapsed = microtime(true) - $last_mark->time;
-            $new_fill = ($new_fill > $this->max) ? $this->max : $last_mark->fill + ($elapsed * $this->rate);
-            $this->fill = $new_fill;
+        $this->storage->readBucket($this);
+        if ($this->getLastTimestamp()) {
+            // Calculate the new fill
+            $elapsed = microtime(true) - $this->getLastTimestamp();
+            $this->setFill($this->getFill() + $this->getRate() * $elapsed);
         }
     }
 }
