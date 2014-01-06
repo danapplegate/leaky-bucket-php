@@ -55,7 +55,7 @@ class FileStorage implements StorageInterface {
 
     public function getMark($name) {
         $filename = $this->_constructFilename($name);
-        $mark_parts = file_get_contents($filename);
+        $mark_parts = explode(':', file_get_contents($filename));
         if (count($mark_parts) != 2) {
             throw new \Exception;
         }
@@ -72,7 +72,7 @@ class FileStorage implements StorageInterface {
             'time' => microtime(true),
             'fill' => $fill
         );
-        file_put_contents($filename, implode(PHP_EOL, $mark_parts));
+        file_put_contents($filename, implode(':', $mark_parts));
 
         return true;
     }
