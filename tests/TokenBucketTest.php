@@ -43,10 +43,10 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testStartMethodStartsBucketTimer() {
-        $this->assertNull($this->bucket->getStart());
+        $this->assertNull($this->bucket->getLastTimestamp());
         $this->bucket->start();
-        $this->assertNotNull($this->bucket->getStart());
-        $this->assertInternalType('float', $this->bucket->getStart());
+        $this->assertNotNull($this->bucket->getLastTimestamp());
+        $this->assertInternalType('float', $this->bucket->getLastTimestamp());
     }
 
     /**
@@ -76,5 +76,24 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
         $this->bucket->setFill(90);
         $this->bucket->setMax(80);
         $this->assertEquals(80, $this->bucket->getFill());
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testSetInvalidLastTimestampString() {
+        $this->bucket->setLastTimestamp('test');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testSetInvalidLastTimestampNegative() {
+        $this->bucket->setLastTimestamp('-123.45');
+    }
+
+    public function testSetValidLastTimestamp() {
+        $this->bucket->setLastTimestamp('123.45');
+        $this->assertEquals(123.45, $this->bucket->getLastTimestamp());
     }
 }

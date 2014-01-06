@@ -21,6 +21,8 @@
  */
 namespace danapplegate\LeakyBucket\Storage;
 
+use danapplegate\LeakyBucket\TokenBucket;
+
 /**
  * StorageInterface.php
  *
@@ -32,7 +34,7 @@ namespace danapplegate\LeakyBucket\Storage;
  */ 
 interface StorageInterface {
 
-    public function getMark($name);
+    public function readBucket(TokenBucket $bucket);
 
-    public function setMark($name, $fill);
+    public function writeBucket(TokenBucket $bucket);
 }

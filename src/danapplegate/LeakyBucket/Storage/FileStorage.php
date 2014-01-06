@@ -21,6 +21,8 @@
  */
 namespace danapplegate\LeakyBucket\Storage;
 
+use danapplegate\LeakyBucket\TokenBucket;
+
 /**
  * FileStorage.php - Basic persistent storage to the filesystem.
  *
@@ -54,24 +56,28 @@ class FileStorage implements StorageInterface {
         }
     }
 
-    public function getMark($name) {
-        $filename = $this->_constructFilename($name);
+    public function readBucket(TokenBucket $bucket) {
+        $filename = $this->_constructFilename($bucket->getName());
+        if (!file_exists($filename)) {
+            return false;
+        }
         $mark_parts = explode(':', file_get_contents($filename));
         if (count($mark_parts) != 2) {
-            throw new \Exception;
+            // Unrecognized format
+            return false;
         }
         list($time, $fill) = $mark_parts;
-        $last_mark->time = $time;
-        $last_mark->fill = $fill;
+        $bucket->setLastTimestamp($time);
+        $bucket->setFill($fill);
 
-        return $last_mark;
+        return true;
     }
 
-    public function setMark($name, $fill) {
-        $filename = $this->_constructFilename($name);
+    public function writeBucket(TokenBucket $bucket) {
+        $filename = $this->_constructFilename($bucket->getName());
         $mark_parts = array(
-            'time' => microtime(true),
-            'fill' => $fill
+            'time' => $bucket->getLastTimestamp(),
+            'fill' => $bucket->getFill()
         );
         file_put_contents($filename, implode(':', $mark_parts));
 
