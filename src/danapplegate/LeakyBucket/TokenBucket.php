@@ -126,22 +126,24 @@ class TokenBucket {
      *
      */
     public function start() {
-        $this->_updateFill();
+        $this->storage->readBucket($this);
         if (!$this->lastTimestamp) {
             // This is the first time the bucket has been started, persist to 
             // storage
             $this->lastTimestamp = microtime(true);
             $this->storage->writeBucket($this);
         }
+        $this->_updateFill();
     }
 
     public function pour($weight = 1) {
-        $this->_updateFill();
+        $this->storage->readBucket($this);
         if ($weight <= $this->getFill()) {
             $newFill = $this->getFill() - $weight;
             $this->setFill($newFill);
             $this->setLastTimestamp(microtime(true));
             $this->storage->writeBucket($this);
+            $this->_updateFill();
             return true;
         } else {
             return false;
@@ -149,7 +151,6 @@ class TokenBucket {
     }
 
     protected function _updateFill() {
-        $this->storage->readBucket($this);
         if ($this->getLastTimestamp()) {
             // Calculate the new fill
             $elapsed = microtime(true) - $this->getLastTimestamp();
