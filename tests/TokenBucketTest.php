@@ -34,8 +34,19 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
 
     protected $bucket;
 
+    protected function getStorageMock() {
+        return $this->getMock('\danapplegate\LeakyBucket\Storage\FileStorage');
+    }
+
+    protected function getBucket($storage) {
+        return new TokenBucket($storage);
+    }
+
     protected function setUp() {
-        $this->bucket = new TokenBucket;
+        // Construct valid mock storage object that expects to do nothing
+        $mockStorage = $this->getStorageMock();
+        $mockStorage->expects($this->never())->method($this->anything());
+        $this->bucket = $this->getBucket($mockStorage);
     }
 
     protected function tearDown() {
@@ -43,18 +54,30 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testStartMethodStartsBucketTimer() {
-        $this->assertNull($this->bucket->getLastTimestamp());
-        $this->bucket->start();
-        $this->assertNotNull($this->bucket->getLastTimestamp());
-        $this->assertInternalType('float', $this->bucket->getLastTimestamp());
+        $mockStorage = $this->getStorageMock();
+        $bucket = $this->getBucket($mockStorage);
+        $mockStorage
+            ->expects($this->once())
+            ->method('readBucket')
+            ->with($this->identicalTo($bucket));
+        $this->assertNull($bucket->getLastTimestamp());
+        $bucket->start();
+        $this->assertNotNull($bucket->getLastTimestamp());
+        $this->assertInternalType('float', $bucket->getLastTimestamp());
     }
 
     /**
      * @expectedException \Exception
      */
     public function testSetMaxAfterBucketStartedFails() {
-        $this->bucket->start();
-        $this->bucket->setMax(100);
+        $mockStorage = $this->getStorageMock();
+        $bucket = $this->getBucket($mockStorage);
+        $mockStorage
+            ->expects($this->once())
+            ->method('readBucket')
+            ->with($this->identicalTo($bucket));
+        $bucket->start();
+        $bucket->setMax(100);
     }
 
     /**
