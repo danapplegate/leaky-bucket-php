@@ -53,11 +53,10 @@ class TokenBucket {
     /**
      * Construct a new leaky bucket object.
      *
-     * @param $options array Configuration settings.
      * @param $storage SotrageInterface Persister for this leaky bucket
+     * @param $options array Configuration settings.
      */
-    public function __construct($options = array(), StorageInterface $storage = null) {
-        if (!$storage) $storage = new FileStorage();
+    public function __construct(StorageInterface $storage, $options = array()) {
         $options = array_intersect_key($options, self::$defaults);
         $options = array_merge(self::$defaults, $options);
         foreach ($options as $key => $value) {

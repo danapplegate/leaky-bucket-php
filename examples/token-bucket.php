@@ -14,10 +14,12 @@ BUCKET;
 }
 
 use danapplegate\LeakyBucket\TokenBucket;
+use danapplegate\LeakyBucket\Storage\FileStorage;
 
 echo "Token Bucket test" . PHP_EOL;
 
-$bucket = new TokenBucket;
+$storage = new FileStorage;
+$bucket = new TokenBucket($storage);
 $bucket->start();
 
 echo "Bucket created and started" . PHP_EOL;
