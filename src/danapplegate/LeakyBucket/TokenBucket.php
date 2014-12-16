@@ -56,7 +56,7 @@ class TokenBucket {
      * @param $storage SotrageInterface Persister for this leaky bucket
      * @param $options array Configuration settings.
      */
-    public function __construct(StorageInterface $storage, $options = array()) {
+    public function __construct(StorageInterface $storage = null, $options = array()) {
         $options = array_intersect_key($options, self::$defaults);
         $options = array_merge(self::$defaults, $options);
         foreach ($options as $key => $value) {
@@ -64,6 +64,13 @@ class TokenBucket {
         }
         $this->storage = $storage;
         $this->name = $options['prefix'] . '_' . $this->name;
+    }
+
+    public function setStorage(StorageInterface $storage) {
+        if ($this->storage) {
+            throw new \Exception;
+        }
+        $this->storage = $storage;
     }
 
     public function getName() {

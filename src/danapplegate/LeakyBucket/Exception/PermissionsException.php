@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright (c) 2012 Dan Applegate <applegatedt@gmail.com>
+ *  Copyright (c) 2012-2014 Dan Applegate <applegatedt@gmail.com>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy of
  *  this software and associated documentation files (the "Software"), to deal in
@@ -19,20 +19,6 @@
  *  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  *  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-namespace danapplegate\LeakyBucket\Storage;
+namespace danapplegate\LeakyBucket\Exception;
 
-use danapplegate\LeakyBucket\TokenBucket;
-
-/**
- * StorageInterface.php
- *
- * @package     PHP Leaky Bucket
- * @author 		Dan Applegate <dan.applegate@rokkan.com>
- * @copyright   Copyright 2012 Rokkan Media LLC
- * @since 		Mar 27, 2012
- * @license     MIT license
- */ 
-interface StorageInterface {
-
-    public function init(TokenBucket $bucket);
-}
+class PermissionsException extends \Exception {}

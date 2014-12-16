@@ -22,6 +22,7 @@
 namespace danapplegate\LeakyBucket\Storage;
 
 use danapplegate\LeakyBucket\TokenBucket;
+use danapplegate\LeakyBucket\Exception\PermissionsException;
 
 /**
  * FileStorage.php - Basic persistent storage to the filesystem.
@@ -34,58 +35,50 @@ use danapplegate\LeakyBucket\TokenBucket;
  */ 
 class FileStorage implements StorageInterface {
 
-    protected $path;
+    private $path;
 
-    protected static $defaults = array(
-        'path' => null
-    );
-
-    public function __construct($options = array()) {
-        $options = array_intersect_key($options, self::$defaults);
-        $options = array_merge(self::$defaults, $options);
-        if (!$options['path'])
-            $options['path'] = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'buckets';
-        foreach ($options as $key => $value) {
-            $this->{$key} = $value;
-        }
-        if (!file_exists($this->path) && !mkdir($this->path, 0777, true)) {
-            throw new \InvalidArgumentException;
-        }
-        if (!is_writable($this->path)) {
-            throw new \InvalidArgumentException;
+    public function __construct($path = null) {
+        $this->path = $path;
+        if (!$this->path) {
+            $this->path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'buckets';
         }
     }
 
-    public function readBucket(TokenBucket $bucket) {
-        $filename = $this->_constructFilename($bucket->getName());
-        if (!file_exists($filename)) {
-            return false;
+    public function init(TokenBucket $bucket) {
+        if (!file_exists($this->path)) {
+            mkdir($this->path, 0644, true);
+        } else if (!is_writable($this->path)) {
+            throw new PermissionsException("Could not create bucket directory in $this->path because it was not writable");
         }
-        $mark_parts = explode(':', file_get_contents($filename));
-        if (count($mark_parts) != 2) {
-            // Unrecognized format
-            return false;
-        }
-        list($time, $fill) = $mark_parts;
-        $bucket->setLastTimestamp($time);
-        $bucket->setFill($fill);
-
-        return true;
     }
 
-    public function writeBucket(TokenBucket $bucket) {
-        $filename = $this->_constructFilename($bucket->getName());
-        $mark_parts = array(
-            'time' => $bucket->getLastTimestamp(),
-            'fill' => $bucket->getFill()
-        );
-        file_put_contents($filename, implode(':', $mark_parts));
-
-        return true;
+    public function start(TokenBucket $bucket) {
+        $filename = $this->getFileName($bucket);
+        $fh = fopen($filename, 'w');
+        if (!$this->getExclusiveLock($fh)) {
+            throw new \Exception('Could not obtain lock to start bucket');
+        }
+        $content = fread($fh, 1);
+        if (!$content) {
+            fwrite($fh, $this->formatFileContent($bucket->getFill()));
+        }
+        $this->releaseLock($fh);
     }
 
-    protected function _constructFilename($name) {
-        $filename = $this->path . DIRECTORY_SEPARATOR . $name;
-        return $filename;
+    private function formatFileContent($fill) {
+        $time = microtime(true);
+        return sprintf("%f:%f", $time, $fill);
+    }
+
+    private function getFileName(TokenBucket $bucket) {
+        return $this->path . DIRECTORY_SEPARATOR . $bucket->getName();
+    }
+
+    private function getExclusiveLock($file) {
+        return flock($file, LOCK_EX);
+    }
+
+    private function releaseLock($file) {
+        return flock($file, LOCK_UN);
     }
 }
