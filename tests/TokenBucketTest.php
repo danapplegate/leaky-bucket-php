@@ -34,8 +34,8 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
 
     protected $bucket;
 
-    protected function getStorageMock() {
-        return $this->getMock('\danapplegate\LeakyBucket\Storage\FileStorage');
+    protected function getStorageMockbuilder() {
+        return $this->getMockBuilder(\danapplegate\LeakyBucket\Storage\FileStorage::class);
     }
 
     protected function getBucket($storage) {
@@ -44,8 +44,11 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
 
     protected function setUp() {
         // Construct valid mock storage object that expects to do nothing
-        $mockStorage = $this->getStorageMock();
-        $mockStorage->expects($this->never())->method($this->anything());
+        $mockStorage = $this->getStorageMockbuilder()
+            ->getMock();
+        $mockStorage
+            ->expects($this->never())
+            ->method($this->anything());
         $this->bucket = $this->getBucket($mockStorage);
     }
 
@@ -54,11 +57,17 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testStartMethodStartsBucketTimer() {
-        $mockStorage = $this->getStorageMock();
+        $mockStorage = $this->getStorageMockbuilder()
+            ->setMethods(['readBucket', 'writeBucket'])
+            ->getMock();
         $bucket = $this->getBucket($mockStorage);
         $mockStorage
             ->expects($this->once())
             ->method('readBucket')
+            ->with($this->identicalTo($bucket));
+        $mockStorage
+            ->expects($this->once())
+            ->method('writeBucket')
             ->with($this->identicalTo($bucket));
         $this->assertNull($bucket->getLastTimestamp());
         $bucket->start();
@@ -70,7 +79,9 @@ class TokenBucketTest extends \PHPUnit_Framework_TestCase {
      * @expectedException \Exception
      */
     public function testSetMaxAfterBucketStartedFails() {
-        $mockStorage = $this->getStorageMock();
+        $mockStorage = $this->getStorageMockbuilder()
+            ->setMethods(['readBucket', 'writeBucket'])
+            ->getMock();
         $bucket = $this->getBucket($mockStorage);
         $mockStorage
             ->expects($this->once())
