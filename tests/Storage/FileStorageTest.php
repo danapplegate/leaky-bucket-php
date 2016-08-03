@@ -56,9 +56,6 @@ class FileStorageTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testStartCreatesCorrectlyFormattedBucketfile() {
-        xdebug_break();
-        $this->assertTrue(is_writable(vfsStream::url('tmp')));
-        $this->assertEquals(2, count(scandir(vfsStream::url('tmp'))));
         $fileStorage = new FileStorage(vfsStream::url('tmp'));
         $fileStorage->start($this->bucket);
         $files = scandir(vfsStream::url('tmp'));
